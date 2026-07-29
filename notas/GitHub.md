@@ -31,18 +31,15 @@ Estos comandos se usan para moverse por carpetas, crear archivos, eliminarlos y 
 | `cd nombre-carpeta` | Entra a una carpeta existente        | `cd proyecto` |
 | `cd ..`             | Regresa a la carpeta anterior        | `cd ..`       |
 | `pwd`               | Muestra la ruta actual               | `pwd`         |
-| `tree`              | Muestra la estructura de carpetas    | `tree`        |
 
 ## Archivos y carpetas
 
-| Comando                | Descripción                | Ejemplo                    |
-| ---------------------- | -------------------------- | -------------------------- |
-| `mkdir nombre-carpeta` | Crea una carpeta           | `mkdir mi-proyecto`        |
-| `touch nombre-archivo` | Crea un archivo            | `touch index.html`         |
-| `cp archivo destino`   | Copia un archivo o carpeta | `cp index.html copia.html` |
-| `mv archivo destino`   | Mueve o renombra archivos  | `mv viejo.txt nuevo.txt`   |
-| `rm nombre-archivo`    | Elimina un archivo         | `rm notas.txt`             |
-| `rmdir nombre-carpeta` | Elimina una carpeta vacía  | `rmdir carpeta-vacia`      |
+| Comando                | Descripción               | Ejemplo               |
+| ---------------------- | ------------------------- | --------------------- |
+| `mkdir nombre-carpeta` | Crea una carpeta          | `mkdir mi-proyecto`   |
+| `touch nombre-archivo` | Crea un archivo           | `touch index.html`    |
+| `rm nombre-archivo`    | Elimina un archivo        | `rm notas.txt`        |
+| `rmdir nombre-carpeta` | Elimina una carpeta vacía | `rmdir carpeta-vacia` |
 
 ---
 
@@ -72,8 +69,7 @@ git clone https://github.com/usuario/repositorio.git
 | `git status`         | Muestra archivos nuevos, modificados o listos para commit          |
 | `git diff`           | Muestra los cambios realizados antes de agregarlos al staging area |
 | `git log --oneline`  | Muestra el historial de commits en una línea                       |
-| `git reflog`         | Muestra un historial más completo de movimientos en Git            |
-| `git show commit-id` | Muestra detalles de un commit específico                           |
+| `git show commit-id` | Muestra detalles de un commit específico (git show 00cc4d)         |
 
 Ejemplo:
 
@@ -123,14 +119,16 @@ Las ramas permiten trabajar en nuevas funcionalidades, correcciones o experiment
 
 ## Comandos básicos de ramas
 
-| Comando                       | Descripción                           |
-| ----------------------------- | ------------------------------------- |
-| `git branch`                  | Lista las ramas existentes            |
-| `git branch nombre-rama`      | Crea una nueva rama                   |
-| `git checkout nombre-rama`    | Cambia a una rama existente           |
-| `git checkout -b nombre-rama` | Crea una rama nueva y se mueve a ella |
-| `git branch -m nuevo-nombre`  | Cambia el nombre de la rama actual    |
-| `git branch -d nombre-rama`   | Elimina una rama local                |
+| Comando                                | Descripción                        |
+| -------------------------------------- | ---------------------------------- |
+| `git branch`                           | Lista las ramas existentes         |
+| `git branch nombre-rama`               | Crea una nueva rama                |
+| `git checkout nombre-rama`             | Cambia a una rama existente        |
+| `git branch -m nuevo-nombre`           | Cambia el nombre de la rama actual |
+| `git branch -d nombre-rama`            | Elimina una rama local             |
+| `git push origin --delete nombre-rama` | Elimina una rama de repo remoto    |
+
+Para eliminar una rama primero debemos movernos a otra.
 
 Ejemplo:
 
@@ -153,6 +151,8 @@ git checkout main
 
 ## Unir ramas
 
+Primero nos movemos a la rama a la que pasaremos los cambios, y luego se hace merge desde la que pasaremos los cambios.
+
 | Comando                 | Descripción                                    |
 | ----------------------- | ---------------------------------------------- |
 | `git merge nombre-rama` | Une los cambios de una rama con la rama actual |
@@ -163,6 +163,11 @@ Ejemplo:
 git checkout main
 git merge nueva-funcionalidad
 ```
+
+Si luego de hacer merge aparece la consola de vim, debemos:
+ESC
+:wq
+Enter
 
 ---
 
