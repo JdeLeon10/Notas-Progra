@@ -169,6 +169,26 @@ ESC
 :wq
 Enter
 
+## Crear una rama local basado en una nueva rama remota
+
+```bash
+git checkout --track origin/nombre-nueva-rama
+```
+
+## Eliminar ramas remotas
+
+El proceso puede hacerse desde el recurso en linea o con el comando 
+
+```bash
+git branch -d rama
+```
+
+Adicional a eso si se necesita sincronizar el repositorio local despues de eliminar puede ejecutarse
+
+```bash
+git fetch origin --prune
+```
+
 ---
 
 # Deshacer cambios
