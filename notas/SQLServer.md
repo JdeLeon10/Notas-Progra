@@ -607,197 +607,515 @@ VALUES
 
 ## JOIN
 
-Los `JOIN` combinan datos de varias tablas usando columnas relacionadas.
+Los `JOIN` permiten combinar datos de dos o mas tablas usando columnas relacionadas.
 
-Para entenderlos visualmente, usaremos estas tablas de ejemplo.
+Se usan cuando la informacion esta separada en diferentes tablas, pero necesitas verla junta en una sola consulta.
 
-Tabla `users`:
+Por ejemplo:
 
-| users_id | name      | company_id |
-| -------- | --------- | ---------- |
-| 1        | Usuario 1 | 1          |
-| 2        | Usuario 2 | 2          |
-| 3        | Usuario 3 | 3          |
-| 4        | Usuario 4 | NULL       |
+- Una tabla puede tener los nombres de las personas.
+- Otra tabla puede tener las edades.
+- Otra tabla puede tener la empresa a la que pertenece cada usuario.
+- Otra tabla puede tener los lenguajes que conoce cada usuario.
 
-Tabla `DPI`:
+La idea principal de un `JOIN` es decirle a SQL Server:
 
-| DPI_id | DPI_number | users_id |
-| ------ | ---------- | -------- |
-| 1      | 11111      | 1        |
-| 2      | 22222      | 2        |
-| 3      | 33333      | 3        |
+> Une estas tablas cuando esta columna de una tabla coincida con esta columna de la otra tabla.
 
-Tabla `companies`:
+---
 
-| company_id | company_name |
-| ---------- | ------------ |
-| 1          | Empresa A    |
-| 2          | Empresa B    |
-| 3          | Empresa C    |
+### Ejemplo simple con dos tablas: `Nombre` y `Edad`
 
-Tabla `languages`:
+Supongamos que tienes estas dos tablas.
 
-| languages_id | languages_name |
-| ------------ | -------------- |
-| 1            | Swift          |
-| 2            | Kotlin         |
-| 5            | C#             |
-| 6            | Go             |
-| 7            | JavaScript     |
+Tabla `Nombre`:
 
-Tabla intermedia `user_languages`:
+| PersonaId | Nombre |
+| --------- | ------ |
+| 1         | Ana    |
+| 2         | Luis   |
+| 3         | Carlos |
+| 4         | Maria  |
 
-| user_languages_id | users_id | languages_id |
-| ----------------- | -------- | ------------ |
-| 1                 | 1        | 1            |
-| 2                 | 1        | 2            |
-| 3                 | 2        | 5            |
-| 4                 | 2        | 7            |
-| 5                 | 3        | 6            |
-| 6                 | 3        | 7            |
+Tabla `Edad`:
 
-Sintaxis general de un `JOIN`:
+| PersonaId | Edad |
+| --------- | ---- |
+| 1         | 25   |
+| 2         | 30   |
+| 4         | 22   |
+
+Nota que `Carlos` existe en la tabla `Nombre`, pero no tiene edad registrada en la tabla `Edad`.
+
+Crear las tablas:
 
 ```sql
-SELECT tabla1.columna, tabla2.columna
+CREATE TABLE Nombre (
+    PersonaId INT PRIMARY KEY,
+    Nombre VARCHAR(50)
+);
+
+CREATE TABLE Edad (
+    PersonaId INT,
+    Edad INT
+);
+```
+
+Insertar datos:
+
+```sql
+INSERT INTO Nombre (PersonaId, Nombre)
+VALUES 
+    (1, 'Ana'),
+    (2, 'Luis'),
+    (3, 'Carlos'),
+    (4, 'Maria');
+
+INSERT INTO Edad (PersonaId, Edad)
+VALUES 
+    (1, 25),
+    (2, 30),
+    (4, 22);
+```
+
+---
+
+### Sintaxis general de un JOIN
+
+```sql
+SELECT 
+    tabla1.columna,
+    tabla2.columna
 FROM tabla1
-INNER JOIN tabla2 ON tabla1.columna_relacionada = tabla2.columna_relacionada;
+INNER JOIN tabla2
+    ON tabla1.columna_relacionada = tabla2.columna_relacionada;
 ```
 
 Lectura de la sintaxis:
 
-- `SELECT tabla1.columna, tabla2.columna`: columnas que quieres mostrar en el resultado.
-- `FROM tabla1`: tabla principal desde donde empieza la consulta.
-- `INNER JOIN tabla2`: segunda tabla que quieres unir.
-- `ON tabla1.columna_relacionada = tabla2.columna_relacionada`: condicion que indica como se conectan ambas tablas.
+- `SELECT`: indica que columnas quieres mostrar.
+- `FROM tabla1`: indica la tabla principal desde donde empieza la consulta.
+- `INNER JOIN tabla2`: indica la segunda tabla que quieres unir.
+- `ON`: indica la condicion que conecta ambas tablas.
+- `tabla1.columna_relacionada = tabla2.columna_relacionada`: indica que columnas deben coincidir para unir los registros.
 
-Aplicado al ejemplo de `users` y `DPI`:
+Ejemplo:
 
 ```sql
-SELECT users.name, DPI.DPI_number
-FROM users
-INNER JOIN DPI ON users.users_id = DPI.users_id;
+SELECT 
+    Nombre.PersonaId,
+    Nombre.Nombre,
+    Edad.Edad
+FROM Nombre
+INNER JOIN Edad
+    ON Nombre.PersonaId = Edad.PersonaId;
 ```
 
 Lectura del ejemplo:
 
-- Mostrar `users.name` y `DPI.DPI_number`.
-- Empezar desde la tabla `users`.
-- Unir con la tabla `DPI`.
-- Relacionar ambas tablas cuando `users.users_id` sea igual a `DPI.users_id`.
+- Mostrar el `PersonaId` y `Nombre` de la tabla `Nombre`.
+- Mostrar la `Edad` de la tabla `Edad`.
+- Unir ambas tablas cuando `Nombre.PersonaId` sea igual a `Edad.PersonaId`.
+
+Resultado:
+
+| PersonaId | Nombre | Edad |
+| --------- | ------ | ---- |
+| 1         | Ana    | 25   |
+| 2         | Luis   | 30   |
+| 4         | Maria  | 22   |
+
+`Carlos` no aparece porque no tiene coincidencia en la tabla `Edad`.
+
+---
+
+### Alias en consultas con JOIN
+
+Cuando se escriben consultas con `JOIN`, es comun usar alias para las tablas.
+
+Un alias es un nombre corto temporal que se le asigna a una tabla dentro de una consulta.
+
+Esto ayuda a escribir consultas mas cortas, limpias y faciles de leer.
+
+Ejemplo sin alias:
+
+```sql
+SELECT 
+    Nombre.PersonaId,
+    Nombre.Nombre,
+    Edad.Edad
+FROM Nombre
+INNER JOIN Edad
+    ON Nombre.PersonaId = Edad.PersonaId;
+```
+
+Ejemplo con alias:
+
+```sql
+SELECT 
+    n.PersonaId,
+    n.Nombre,
+    e.Edad
+FROM Nombre AS n
+INNER JOIN Edad AS e
+    ON n.PersonaId = e.PersonaId;
+```
+
+En este ejemplo:
+
+- `n` es el alias de la tabla `Nombre`.
+- `e` es el alias de la tabla `Edad`.
+- `n.PersonaId` significa la columna `PersonaId` de la tabla `Nombre`.
+- `n.Nombre` significa la columna `Nombre` de la tabla `Nombre`.
+- `e.Edad` significa la columna `Edad` de la tabla `Edad`.
+
+La parte:
+
+```sql
+FROM Nombre AS n
+```
+
+significa:
+
+> A la tabla `Nombre` le llamaremos `n` dentro de esta consulta.
+
+La parte:
+
+```sql
+INNER JOIN Edad AS e
+```
+
+significa:
+
+> A la tabla `Edad` le llamaremos `e` dentro de esta consulta.
+
+Y la condicion:
+
+```sql
+ON n.PersonaId = e.PersonaId
+```
+
+significa:
+
+> Une ambas tablas cuando el `PersonaId` de `Nombre` sea igual al `PersonaId` de `Edad`.
+
+Tambien puedes usar alias mas descriptivos:
+
+```sql
+SELECT 
+    nombre.PersonaId,
+    nombre.Nombre,
+    edad.Edad
+FROM Nombre AS nombre
+INNER JOIN Edad AS edad
+    ON nombre.PersonaId = edad.PersonaId;
+```
+
+Lo importante es que, una vez defines un alias, debes usar ese alias en el resto de la consulta.
+
+Por ejemplo, si escribes:
+
+```sql
+FROM Nombre AS n
+```
+
+entonces debes usar:
+
+```sql
+n.Nombre
+```
+
+y no:
+
+```sql
+Nombre.Nombre
+```
+
+Alias comunes:
+
+```sql
+FROM users AS u
+FROM companies AS c
+FROM languages AS l
+FROM user_languages AS ul
+```
+
+Tambien es comun ver el alias sin escribir `AS`:
+
+```sql
+FROM Nombre n
+INNER JOIN Edad e
+    ON n.PersonaId = e.PersonaId;
+```
+
+Esto funciona igual que:
+
+```sql
+FROM Nombre AS n
+INNER JOIN Edad AS e
+    ON n.PersonaId = e.PersonaId;
+```
+
+Para aprender, usar `AS` puede ser mas claro.
+
+---
 
 ### INNER JOIN
 
-Devuelve solo las filas que tienen coincidencia en ambas tablas.
+`INNER JOIN` devuelve solamente las filas que tienen coincidencia en ambas tablas.
 
-Relacion 1:1 entre `users` y `DPI`:
-
-```sql
-SELECT users.name, DPI.DPI_number
-FROM users
-INNER JOIN DPI ON users.users_id = DPI.users_id;
-```
-
-Resultado:
-
-| name      | DPI_number |
-| --------- | ---------- |
-| Usuario 1 | 11111      |
-| Usuario 2 | 22222      |
-| Usuario 3 | 33333      |
-
-`Usuario 4` no aparece porque no tiene coincidencia en la tabla `DPI`.
-
-Relacion 1:N entre `users` y `companies`:
-
-```sql
-SELECT users.name, companies.company_name
-FROM users
-INNER JOIN companies ON users.company_id = companies.company_id;
-```
-
-Resultado:
-
-| name      | company_name |
-| --------- | ------------ |
-| Usuario 1 | Empresa A    |
-| Usuario 2 | Empresa B    |
-| Usuario 3 | Empresa C    |
-
-`Usuario 4` no aparece porque su `company_id` es `NULL`, por lo tanto no coincide con ninguna empresa.
-
-Relacion N:N entre `users`, `user_languages` y `languages`:
-
-```sql
-SELECT users.name, languages.languages_name
-FROM user_languages
-INNER JOIN users ON user_languages.users_id = users.users_id
-INNER JOIN languages ON user_languages.languages_id = languages.languages_id;
-```
-
-Resultado:
-
-| name      | languages_name |
-| --------- | -------------- |
-| Usuario 1 | Swift          |
-| Usuario 1 | Kotlin         |
-| Usuario 2 | C#             |
-| Usuario 2 | JavaScript     |
-| Usuario 3 | Go             |
-| Usuario 3 | JavaScript     |
-
-Aqui un usuario puede aparecer varias veces porque puede estar relacionado con varios lenguajes. La tabla `user_languages` es la que conecta `users` con `languages`.
-
-> Correccion importante: en una relacion N:N, la tabla intermedia debe unirse con `languages` usando `user_languages.languages_id = languages.languages_id`, no usando `user_languages.user_languages_id`.
-
-### LEFT JOIN
-
-Devuelve todas las filas de la tabla izquierda y las coincidencias de la derecha. Si no hay coincidencia, las columnas de la derecha aparecen como `NULL`.
-
-La sintaxis es muy parecida a `INNER JOIN`; la diferencia esta en que `LEFT JOIN` conserva todas las filas de la tabla que esta en el `FROM`.
+Es uno de los tipos de `JOIN` mas comunes porque se usa cuando necesitas datos que existen en las dos tablas relacionadas.
 
 Sintaxis general:
 
 ```sql
-SELECT tabla1.columna, tabla2.columna
-FROM tabla1
-LEFT JOIN tabla2 ON tabla1.columna_relacionada = tabla2.columna_relacionada;
+SELECT 
+    tabla1.columna,
+    tabla2.columna
+FROM tabla1 AS alias1
+INNER JOIN tabla2 AS alias2
+    ON alias1.columna_relacionada = alias2.columna_relacionada;
 ```
 
-Lectura de la sintaxis:
-
-- `SELECT tabla1.columna, tabla2.columna`: columnas que quieres mostrar.
-- `FROM tabla1`: tabla izquierda; todas sus filas se mantienen en el resultado.
-- `LEFT JOIN tabla2`: tabla derecha; solo aporta datos cuando hay coincidencia.
-- `ON tabla1.columna_relacionada = tabla2.columna_relacionada`: condicion que conecta ambas tablas.
-
-Aplicado al ejemplo de `users` y `DPI`:
+Ejemplo usando `Nombre` y `Edad`:
 
 ```sql
-SELECT users.name, DPI.DPI_number
-FROM users
-LEFT JOIN DPI ON users.users_id = DPI.users_id;
+SELECT 
+    n.PersonaId,
+    n.Nombre,
+    e.Edad
+FROM Nombre AS n
+INNER JOIN Edad AS e
+    ON n.PersonaId = e.PersonaId;
 ```
-
-Lectura del ejemplo:
-
-- Mostrar `users.name` y `DPI.DPI_number`.
-- Empezar desde `users`, que es la tabla izquierda.
-- Unir con `DPI`, que es la tabla derecha.
-- Mantener todos los usuarios aunque no tengan coincidencia en `DPI`.
-- Si un usuario no tiene DPI, `DPI.DPI_number` aparece como `NULL`.
 
 Resultado:
 
-| name      | DPI_number |
-| --------- | ---------- |
-| Usuario 1 | 11111      |
-| Usuario 2 | 22222      |
-| Usuario 3 | 33333      |
-| Usuario 4 | NULL       |
+| PersonaId | Nombre | Edad |
+| --------- | ------ | ---- |
+| 1         | Ana    | 25   |
+| 2         | Luis   | 30   |
+| 4         | Maria  | 22   |
 
-Sirve, por ejemplo, para listar todos los usuarios aunque algunos no tengan DPI registrado.
+`Carlos` no aparece porque no tiene edad registrada.
+
+Lectura del ejemplo:
+
+> Dame las personas que tengan coincidencia en la tabla `Edad`.
+
+En otras palabras:
+
+> Muestra solo las personas que si tienen edad.
+
+---
+
+### LEFT JOIN
+
+`LEFT JOIN` devuelve todas las filas de la tabla izquierda y las coincidencias de la tabla derecha.
+
+Si no hay coincidencia en la tabla derecha, SQL Server muestra `NULL` en las columnas de esa tabla.
+
+La tabla izquierda es la que aparece en el `FROM`.
+
+Sintaxis general:
+
+```sql
+SELECT 
+    tabla1.columna,
+    tabla2.columna
+FROM tabla1 AS alias1
+LEFT JOIN tabla2 AS alias2
+    ON alias1.columna_relacionada = alias2.columna_relacionada;
+```
+
+Ejemplo usando `Nombre` y `Edad`:
+
+```sql
+SELECT 
+    n.PersonaId,
+    n.Nombre,
+    e.Edad
+FROM Nombre AS n
+LEFT JOIN Edad AS e
+    ON n.PersonaId = e.PersonaId;
+```
+
+Resultado:
+
+| PersonaId | Nombre | Edad |
+| --------- | ------ | ---- |
+| 1         | Ana    | 25   |
+| 2         | Luis   | 30   |
+| 3         | Carlos | NULL |
+| 4         | Maria  | 22   |
+
+`Carlos` aparece porque esta en la tabla izquierda, que es `Nombre`.
+
+Pero como no tiene coincidencia en la tabla `Edad`, el campo `Edad` aparece como `NULL`.
+
+Lectura del ejemplo:
+
+> Dame todos los nombres, y si tienen edad registrada, muestrala.
+
+Este tipo de `JOIN` es muy util cuando quieres conservar todos los registros principales, aunque falte informacion relacionada.
+
+Ejemplos comunes:
+
+- Mostrar todos los usuarios, aunque no tengan empresa.
+- Mostrar todos los productos, aunque no tengan ventas.
+- Mostrar todos los clientes, aunque no tengan pedidos.
+- Mostrar todos los empleados, aunque no tengan departamento asignado.
+
+---
+
+### RIGHT JOIN
+
+`RIGHT JOIN` devuelve todas las filas de la tabla derecha y las coincidencias de la tabla izquierda.
+
+Si no hay coincidencia en la tabla izquierda, SQL Server muestra `NULL` en las columnas de esa tabla.
+
+La tabla derecha es la que aparece despues del `RIGHT JOIN`.
+
+Sintaxis general:
+
+```sql
+SELECT 
+    tabla1.columna,
+    tabla2.columna
+FROM tabla1 AS alias1
+RIGHT JOIN tabla2 AS alias2
+    ON alias1.columna_relacionada = alias2.columna_relacionada;
+```
+
+Ejemplo usando `Nombre` y `Edad`:
+
+```sql
+SELECT 
+    n.PersonaId,
+    n.Nombre,
+    e.Edad
+FROM Nombre AS n
+RIGHT JOIN Edad AS e
+    ON n.PersonaId = e.PersonaId;
+```
+
+Con los datos actuales, el resultado seria:
+
+| PersonaId | Nombre | Edad |
+| --------- | ------ | ---- |
+| 1         | Ana    | 25   |
+| 2         | Luis   | 30   |
+| 4         | Maria  | 22   |
+
+Ahora agreguemos una edad que no tiene persona relacionada:
+
+```sql
+INSERT INTO Edad (PersonaId, Edad)
+VALUES (5, 40);
+```
+
+Si ejecutamos otra vez:
+
+```sql
+SELECT 
+    n.PersonaId,
+    n.Nombre,
+    e.Edad
+FROM Nombre AS n
+RIGHT JOIN Edad AS e
+    ON n.PersonaId = e.PersonaId;
+```
+
+Resultado:
+
+| PersonaId | Nombre | Edad |
+| --------- | ------ | ---- |
+| 1         | Ana    | 25   |
+| 2         | Luis   | 30   |
+| 4         | Maria  | 22   |
+| NULL      | NULL   | 40   |
+
+Aparece la edad `40`, pero no hay nombre relacionado porque no existe una persona con `PersonaId = 5` en la tabla `Nombre`.
+
+Lectura del ejemplo:
+
+> Dame todas las edades, aunque no tengan una persona relacionada.
+
+En la practica, `RIGHT JOIN` se usa menos que `LEFT JOIN`, porque casi siempre puedes reescribirlo cambiando el orden de las tablas.
+
+Por ejemplo, este `RIGHT JOIN`:
+
+```sql
+SELECT 
+    n.PersonaId,
+    n.Nombre,
+    e.Edad
+FROM Nombre AS n
+RIGHT JOIN Edad AS e
+    ON n.PersonaId = e.PersonaId;
+```
+
+Se puede escribir como `LEFT JOIN` asi:
+
+```sql
+SELECT 
+    n.PersonaId,
+    n.Nombre,
+    e.Edad
+FROM Edad AS e
+LEFT JOIN Nombre AS n
+    ON e.PersonaId = n.PersonaId;
+```
+
+Ambas consultas conservan todos los registros de la tabla `Edad`.
+
+---
+
+### Diferencia entre INNER JOIN, LEFT JOIN y RIGHT JOIN
+
+Resumen rapido:
+
+```sql
+-- Solo coincidencias entre ambas tablas
+INNER JOIN
+
+-- Todo lo de la tabla izquierda + coincidencias de la derecha
+LEFT JOIN
+
+-- Todo lo de la tabla derecha + coincidencias de la izquierda
+RIGHT JOIN
+```
+
+Comparacion usando las tablas `Nombre` y `Edad`:
+
+| Tipo de JOIN | Que devuelve |
+| ------------ | ------------ |
+| `INNER JOIN` | Solo personas que tienen edad |
+| `LEFT JOIN`  | Todas las personas, aunque no tengan edad |
+| `RIGHT JOIN` | Todas las edades, aunque no tengan persona relacionada |
+
+En la practica, los mas comunes son:
+
+```sql
+INNER JOIN
+LEFT JOIN
+```
+
+`RIGHT JOIN` existe y es valido, pero se usa menos porque normalmente se prefiere ordenar las tablas y usar `LEFT JOIN`.
+
+---
+
+### Recomendaciones para usar JOIN
+
+- Usa `INNER JOIN` cuando solo quieres registros que tengan coincidencia en ambas tablas.
+- Usa `LEFT JOIN` cuando quieres conservar todos los registros de la tabla principal.
+- Usa `RIGHT JOIN` solo cuando realmente te convenga conservar todos los registros de la tabla derecha.
+- En la practica, muchas veces se prefiere `LEFT JOIN` en lugar de `RIGHT JOIN`, cambiando el orden de las tablas.
+- Usa alias para que tus consultas sean mas faciles de leer.
+- Elige alias claros: `u` para `users`, `c` para `companies`, `l` para `languages`, `ul` para `user_languages`.
+- Verifica siempre que el `ON` una columnas equivalentes.
+- Normalmente se une una clave foranea con una clave primaria.
+- En relaciones N:N, une siempre pasando por la tabla intermedia.
 
 ## Indices
 
