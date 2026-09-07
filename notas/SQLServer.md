@@ -1062,6 +1062,225 @@ DROP PROCEDURE sp_get_adult_users;
 - Conviene que el nombre describa claramente lo que hace, por ejemplo `sp_get_users_by_country`.
 - Evita guardar logica innecesariamente compleja en procedimientos si puede mantenerse mejor en la aplicacion.
 
+## Sinonimos
+
+Un sinonimo, o `SYNONYM`, es un nombre alternativo para acceder a un objeto de base de datos, como una tabla, vista o procedimiento almacenado.
+
+Sirve para simplificar consultas cuando el objeto real esta en otra base de datos o tiene un nombre largo. El sinonimo no copia los datos; solo crea una referencia hacia el objeto original.
+
+Ejemplo: tenemos una base de datos llamada `BD_Data` con las tablas `Personas` y `Pais`. Luego creamos otra base de datos llamada `BD_SP`, desde donde queremos consultar esas tablas usando sinonimos.
+
+### Crear base de datos para sinonimos
+
+```sql
+-- Crear la base de datos
+CREATE DATABASE BD_SP;
+GO
+
+-- Usar la base de datos
+USE BD_SP;
+GO
+```
+
+### Crear sinonimos
+
+```sql
+CREATE SYNONYM [dbo].[Personas]
+FOR [BD_Data].[dbo].[Personas];
+GO
+
+CREATE SYNONYM [dbo].[Pais]
+FOR [BD_Data].[dbo].[Pais];
+GO
+```
+
+Lectura del ejemplo:
+
+- `[dbo].[Personas]`: es el nombre del sinonimo creado en la base de datos actual, en este caso `BD_SP`.
+- `[BD_Data].[dbo].[Personas]`: es la tabla real que esta en la base de datos `BD_Data`.
+- `[dbo].[Pais]`: es otro sinonimo dentro de `BD_SP`.
+- `[BD_Data].[dbo].[Pais]`: es la tabla real de paises.
+
+Despues de crear los sinonimos, puedes consultar las tablas como si existieran directamente dentro de `BD_SP`.
+
+```sql
+SELECT * FROM [dbo].[Personas];
+
+SELECT * FROM [dbo].[Pais];
+```
+
+Aunque parece que estas consultando tablas de `BD_SP`, realmente los datos vienen desde `BD_Data`.
+
+### Procedimiento almacenado usando sinonimo de Personas
+
+Este procedimiento consulta todas las personas usando el sinonimo `[dbo].[Personas]`.
+
+```sql
+CREATE PROCEDURE sp_get_personas
+AS
+BEGIN
+    SELECT
+        PersonaId,
+        Nombre,
+        Correo,
+        Edad,
+        Nacionalidad
+    FROM [dbo].[Personas];
+END;
+GO
+```
+
+Ejecutar el procedimiento:
+
+```sql
+EXEC sp_get_personas;
+```
+
+Resultado esperado:
+
+| PersonaId | Nombre        | Correo                   | Edad | Nacionalidad |
+| --------- | ------------- | ------------------------ | ---- | ------------ |
+| 1         | Carlos Perez  | carlos.perez@email.com   | 25   | Guatemala    |
+| 2         | Ana Lopez     | ana.lopez@email.com      | 30   | Mexico       |
+| 3         | Luis Martinez | luis.martinez@email.com  | 22   | Colombia     |
+| 4         | Maria Gomez   | maria.gomez@email.com    | 28   | Argentina    |
+| 5         | Jose Ramirez  | jose.ramirez@email.com   | 35   | Espana       |
+
+### Procedimiento almacenado usando sinonimo de Pais
+
+Este procedimiento consulta todos los paises usando el sinonimo `[dbo].[Pais]`.
+
+```sql
+CREATE PROCEDURE sp_get_paises
+AS
+BEGIN
+    SELECT
+        PaisId,
+        NombrePais,
+        Continente,
+        Moneda,
+        ComidaMasFamosa
+    FROM [dbo].[Pais];
+END;
+GO
+```
+
+Ejecutar el procedimiento:
+
+```sql
+EXEC sp_get_paises;
+```
+
+Resultado esperado:
+
+| PaisId | NombrePais | Continente | Moneda          | ComidaMasFamosa |
+| ------ | ---------- | ---------- | --------------- | ---------------- |
+| 1      | Guatemala  | America    | Quetzal         | Pepian           |
+| 2      | Mexico     | America    | Peso mexicano   | Tacos            |
+| 3      | Colombia   | America    | Peso colombiano | Bandeja paisa    |
+| 4      | Argentina  | America    | Peso argentino  | Asado            |
+| 5      | Espana     | Europa     | Euro            | Paella           |
+
+### Procedimiento almacenado con JOIN usando sinonimos
+
+Tambien puedes usar sinonimos dentro de un `JOIN`.
+
+En este ejemplo se unen las personas con su pais usando la columna `Nacionalidad` de `Personas` y la columna `NombrePais` de `Pais`.
+
+```sql
+CREATE PROCEDURE sp_get_personas_con_pais
+AS
+BEGIN
+    SELECT
+        p.PersonaId,
+        p.Nombre,
+        p.Correo,
+        p.Edad,
+        p.Nacionalidad,
+        pa.Continente,
+        pa.Moneda,
+        pa.ComidaMasFamosa
+    FROM [dbo].[Personas] AS p
+    INNER JOIN [dbo].[Pais] AS pa
+        ON p.Nacionalidad = pa.NombrePais;
+END;
+GO
+```
+
+Ejecutar el procedimiento:
+
+```sql
+EXEC sp_get_personas_con_pais;
+```
+
+Resultado esperado:
+
+| PersonaId | Nombre        | Edad | Nacionalidad | Continente | Moneda          | ComidaMasFamosa |
+| --------- | ------------- | ---- | ------------ | ---------- | --------------- | ---------------- |
+| 1         | Carlos Perez  | 25   | Guatemala    | America    | Quetzal         | Pepian           |
+| 2         | Ana Lopez     | 30   | Mexico       | America    | Peso mexicano   | Tacos            |
+| 3         | Luis Martinez | 22   | Colombia     | America    | Peso colombiano | Bandeja paisa    |
+| 4         | Maria Gomez   | 28   | Argentina    | America    | Peso argentino  | Asado            |
+| 5         | Jose Ramirez  | 35   | Espana       | Europa     | Euro            | Paella           |
+
+### Procedimiento almacenado con parametro usando sinonimos
+
+Este procedimiento recibe una nacionalidad y devuelve solo las personas que pertenecen a ese pais.
+
+```sql
+CREATE PROCEDURE sp_get_personas_by_nacionalidad
+    @Nacionalidad NVARCHAR(100)
+AS
+BEGIN
+    SELECT
+        PersonaId,
+        Nombre,
+        Correo,
+        Edad,
+        Nacionalidad
+    FROM [dbo].[Personas]
+    WHERE Nacionalidad = @Nacionalidad;
+END;
+GO
+```
+
+Ejecutar enviando un parametro:
+
+```sql
+EXEC sp_get_personas_by_nacionalidad
+    @Nacionalidad = 'Guatemala';
+```
+
+Resultado esperado:
+
+| PersonaId | Nombre       | Correo                 | Edad | Nacionalidad |
+| --------- | ------------ | ---------------------- | ---- | ------------ |
+| 1         | Carlos Perez | carlos.perez@email.com | 25   | Guatemala    |
+
+### Eliminar sinonimos
+
+Para eliminar un sinonimo se usa `DROP SYNONYM`.
+
+```sql
+DROP SYNONYM [dbo].[Personas];
+GO
+
+DROP SYNONYM [dbo].[Pais];
+GO
+```
+
+> `DROP SYNONYM` solo elimina el nombre alternativo. No elimina la tabla original ni sus datos en `BD_Data`.
+
+### Notas importantes
+
+- Un sinonimo no guarda datos; solo apunta a otro objeto.
+- Si la tabla original cambia de nombre o se elimina, el sinonimo dejara de funcionar.
+- Si la tabla original cambia su estructura, no es necesario volver a crear el sinonimo, ya que funciona como referencia unicamente.
+- Los sinonimos ayudan a escribir consultas mas cortas cuando trabajas con objetos de otra base de datos.
+- Puedes usar sinonimos dentro de `SELECT`, `JOIN`, vistas y procedimientos almacenados.
+- Antes de crear el sinonimo, la base de datos y el objeto real deben existir.
+- `CREATE PROCEDURE` debe ejecutarse en un lote separado, por eso se usa `GO` antes o despues de crear cada procedimiento.
+
 ## Transacciones
 
 Una transaccion permite agrupar varias operaciones SQL para que se ejecuten como una sola unidad de trabajo.
